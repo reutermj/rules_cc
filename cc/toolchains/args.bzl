@@ -24,6 +24,7 @@ load(
 load(
     "//cc/toolchains/impl:nested_args.bzl",
     "NESTED_ARGS_ATTRS",
+    "format_env",
     "nested_args_provider_from_ctx",
 )
 load(
@@ -55,12 +56,18 @@ def _cc_args_impl(ctx):
 
     requires = collect_provider(ctx.attr.requires_any_of, FeatureConstraintInfo)
 
+    formatted = format_env(
+        env = ctx.attr.env,
+        format = {k: v for v, k in ctx.attr.format_env.items()},
+        must_use = ctx.attr.format_env.values(),
+    )
+
     args = ArgsInfo(
         label = ctx.label,
         actions = actions,
         requires_any_of = tuple(requires),
         nested = nested,
-        env = ctx.attr.env,
+        env = formatted,
         files = files,
         allowlist_include_directories = depset(
             direct = [d[DirectoryInfo] for d in ctx.attr.allowlist_include_directories],
@@ -96,6 +103,9 @@ _cc_args = rule(
         "env": attr.string_dict(
             doc = """See documentation for cc_args macro wrapper.""",
         ),
+        "format_env": attr.label_keyed_string_dict(
+            doc = "Variables to be used in environment variable substitutions",
+        ),
         "requires_any_of": attr.label_list(
             providers = [FeatureConstraintInfo],
             doc = """See documentation for cc_args macro wrapper.""",
@@ -126,6 +136,7 @@ def cc_args(
         data = None,
         env = None,
         format = {},
+        format_env = {},
         iterate_over = None,
         nested = None,
         requires_not_none = None,
@@ -234,12 +245,19 @@ def cc_args(
         data: (List[Label]) A list of runtime data dependencies that are required for these
             arguments to work as intended.
         env: (Dict[str, str]) Environment variables that should be set when the tool is invoked.
-        format: (Dict[str, Label]) A mapping of format strings to the label of the corresponding
-            `cc_variable` that the value should be pulled from. All instances of
-            `{variable_name}` will be replaced with the expanded value of `variable_name` in this
-            dictionary. The complete list of possible variables can be found in
+        format: (Dict[str, Label]) A mapping of format strings to the label of a corresponding
+            target. This target can be a `directory`, `subdirectory`, `cc_variable`, or a single
+            file that the value should be pulled from. All instances of `{variable_name}` in the
+            `args` list will be replaced with the expanded value in this dictionary.
+            The complete list of possible variables can be found in
             https://github.com/bazelbuild/rules_cc/tree/main/cc/toolchains/variables/BUILD.
             It is not possible to declare custom variables--these are inherent to Bazel itself.
+        format_env: (Dict[str, Label]) A mapping of format strings to the label of a corresponding
+            target. This target can be a `directory`, `subdirectory`, `cc_variable`, or a single
+            file that the value should be pulled from. All instances of `{variable_name}` in the
+            values of the `env` dict will be replaced with the expanded value in this dictionary.
+            The complete list of possible variables can be found in
+            https://github.com/bazelbuild/rules_cc/tree/main/cc/toolchains/variables/BUILD.
         iterate_over: (Label) The label of a `cc_variable` that should be iterated over. This is
             intended for use with built-in variables that are lists.
         nested: (List[Label]) A list of `cc_nested_args` rules that should be
@@ -278,6 +296,7 @@ def cc_args(
         # We flip the key/value pairs in the dictionary here because Bazel doesn't have a
         # string-keyed label dict attribute type.
         format = {k: v for v, k in format.items()},
+        format_env = {k: v for v, k in format_env.items()},
         iterate_over = iterate_over,
         nested = nested,
         requires_not_none = requires_not_none,
