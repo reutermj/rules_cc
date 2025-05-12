@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests for the cc_args rule."""
 
+load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo")
 load(
     "//cc:cc_toolchain_config_lib.bzl",
     "env_entry",
@@ -30,7 +31,15 @@ load(
     "//cc/toolchains/impl:legacy_converter.bzl",
     "convert_args",
 )
-load("//tests/rule_based_toolchain:subjects.bzl", "subjects")
+load(
+    "//cc/toolchains/impl:nested_args.bzl",
+    "format_env",
+)
+load(
+    "//tests/rule_based_toolchain:subjects.bzl",
+    "result_fn_wrapper",
+    "subjects",
+)
 
 visibility("private")
 
@@ -112,16 +121,107 @@ def _with_dir_test(env, targets):
 
 TARGETS = [
     ":simple",
+    ":foo",
     ":env_only",
     ":with_dir",
     ":iterate_over_optional",
     "//tests/rule_based_toolchain/actions:c_compile",
     "//tests/rule_based_toolchain/actions:cpp_compile",
+    "//tests/rule_based_toolchain/testdata:directory",
+    "//tests/rule_based_toolchain/testdata:bin_wrapper",
 ]
+
+def _format_env(args, format, must_use = [], fail = fail):
+    # return the formatted dict as a list because the test framework
+    # doesn't appear to support dicts
+    return format_env(args, format, must_use, fail)[0].items()
+
+def _expect_that_formatted(env, args, format, must_use = [], expr = None):
+    return env.expect.that_value(
+        result_fn_wrapper(_format_env)(args, format, must_use = must_use),
+        factory = subjects.result(subjects.collection),
+        expr = expr or "format_env(%r, %r)" % (args, format),
+    )
+
+def _format_env_test(env, targets):
+    _expect_that_formatted(
+        env,
+        {"foo": "bar"},
+        {},
+    ).ok().contains_exactly([
+        ("foo", "bar"),
+    ])
+
+    _expect_that_formatted(
+        env,
+        {"foo": "{bar}"},
+        {"bar": targets.directory},
+    ).ok().contains_exactly([
+        ("foo", targets.directory[DirectoryInfo].path),
+    ])
+
+    _expect_that_formatted(
+        env,
+        {"foo": "{bar}"},
+        {"bar": targets.bin_wrapper},
+    ).ok().contains_exactly([
+        ("foo", targets.bin_wrapper[DefaultInfo].files.to_list()[0].path),
+    ])
+
+    _expect_that_formatted(
+        env,
+        {"foo": "{bar}"},
+        {"bar": targets.foo},
+    ).ok().contains_exactly([
+        ("foo", "%{foo}"),
+    ])
+
+    _expect_that_formatted(
+        env,
+        {
+            "bat": "{quuz}",
+            "baz": "{qux}",
+            "foo": "{bar}",
+        },
+        {
+            "bar": targets.directory,
+            "quuz": targets.foo,
+            "qux": targets.bin_wrapper,
+        },
+    ).ok().contains_exactly([
+        ("foo", targets.directory[DirectoryInfo].path),
+        ("baz", targets.bin_wrapper[DefaultInfo].files.to_list()[0].path),
+        ("bat", "%{foo}"),
+    ])
+
+    _expect_that_formatted(
+        env,
+        {"foo": "{bar"},
+        {},
+    ).err().equals('Unmatched { in "{bar"')
+
+    _expect_that_formatted(
+        env,
+        {"foo": "bar}"},
+        {},
+    ).err().equals('Unexpected } in "bar}"')
+
+    _expect_that_formatted(
+        env,
+        {"foo": "{bar}"},
+        {},
+    ).err().contains('Unknown variable "bar" in format string "{bar}"')
+
+    _expect_that_formatted(
+        env,
+        {"foo": "{var} {var}"},
+        {"var": targets.foo},
+    ).err().contains('"{var} {var}" contained multiple variables')
 
 # @unsorted-dict-items
 TESTS = {
     "simple_test": _simple_test,
+    "format_env_test": _format_env_test,
     "env_only_test": _env_only_test,
     "with_dir_test": _with_dir_test,
 }
