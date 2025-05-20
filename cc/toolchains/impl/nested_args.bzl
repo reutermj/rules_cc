@@ -296,7 +296,6 @@ def _format_target(target, fail = fail):
 def _format_string(arg, format, used_vars, fail = fail):
     upto = 0
     out = []
-    has_format = False
 
     # This should be "while true".
     # This number is used because it's an upper bound of the number of iterations.
@@ -316,11 +315,8 @@ def _format_string(arg, format, used_vars, fail = fail):
 
             if variable not in format:
                 fail('Unknown variable %r in format string %r. Try using cc_args(..., format = {"//path/to:variable": %r})' % (variable, arg, variable))
-            elif has_format:
-                fail("The format string %r contained multiple variables, which is unsupported." % arg)
             else:
                 used_vars[variable] = None
-                has_format = True
                 out.append(_format_target(format[variable], fail = fail))
                 upto += len(variable) + 2
 

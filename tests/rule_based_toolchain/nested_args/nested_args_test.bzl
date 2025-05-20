@@ -105,22 +105,22 @@ def _format_args_test(env, targets):
 
     _expect_that_formatted(
         env,
+        ["{var} {var}"],
+        {"var": targets.foo},
+    ).ok().contains_exactly(["%{foo} %{foo}"])
+
+    _expect_that_formatted(
+        env,
         [],
         {"var": targets.foo},
         must_use = ["var"],
     ).err().contains('"var" was not used')
 
-    _expect_that_formatted(
-        env,
-        ["{var} {var}"],
-        {"var": targets.foo},
-    ).err().contains('"{var} {var}" contained multiple variables')
-
-    _expect_that_formatted(
-        env,
-        ["{foo} {bar}"],
-        {"bar": targets.foo, "foo": targets.foo},
-    ).err().contains('"{foo} {bar}" contained multiple variables')
+    # _expect_that_formatted(
+    #     env,
+    #     ["{foo} {bar}"],
+    #     {"bar": targets.foo, "foo": targets.foo},
+    # ).err().contains('"{foo} {bar}" contained multiple variables')
 
 def _iterate_over_test(env, targets):
     inner = _expect_that_nested(

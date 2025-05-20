@@ -219,11 +219,11 @@ def _format_env_test(env, targets):
         must_use = ["var"],
     ).err().contains('"var" was not used')
 
-    _expect_that_formatted(
-        env,
-        {"foo": "{var} {var}"},
-        {"var": targets.foo},
-    ).err().contains('"{var} {var}" contained multiple variables')
+    # _expect_that_formatted(
+    #     env,
+    #     {"foo": "{var} {var}"},
+    #     {"var": targets.foo},
+    # ).err().contains('"{var} {var}" contained multiple variables')
 
 # @unsorted-dict-items
 TESTS = {
