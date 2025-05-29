@@ -129,6 +129,8 @@ TARGETS = [
     "//tests/rule_based_toolchain/actions:c_compile",
     "//tests/rule_based_toolchain/actions:cpp_compile",
     "//tests/rule_based_toolchain/testdata:directory",
+    "//tests/rule_based_toolchain/testdata:subdirectory_1",
+    "//tests/rule_based_toolchain/testdata:subdirectory_2",
     "//tests/rule_based_toolchain/testdata:bin_wrapper",
 ]
 
@@ -211,6 +213,52 @@ def _format_dict_values_test(env, targets):
         ("bat", "%{some_variable}"),
     ])
     res.used_items().contains_exactly(["bar", "quuz", "qux"])
+
+    res = _expect_that_formatted(
+        env,
+        {
+            "foo": "{dir};{file}",
+        },
+        {
+            "dir": targets.directory,
+            "file": targets.bin_wrapper,
+        },
+    ).ok()
+    res.env().contains_exactly([
+        ("foo", "{};{}".format(targets.directory[DirectoryInfo].path, targets.bin_wrapper[DefaultInfo].files.to_list()[0].path)),
+    ])
+    res.used_items().contains_exactly(["dir", "file"])
+
+    res = _expect_that_formatted(
+        env,
+        {
+            "foo": "{dir1};{dir2}",
+        },
+        {
+            "dir1": targets.directory,
+            "dir2": targets.subdirectory_1,
+        },
+    ).ok()
+    res.env().contains_exactly([
+        ("foo", "{};{}".format(targets.directory[DirectoryInfo].path, targets.subdirectory_1[DirectoryInfo].path)),
+    ])
+    res.used_items().contains_exactly(["dir1", "dir2"])
+
+    res = _expect_that_formatted(
+        env,
+        {
+            "foo": "{dir1};{dir2};{dir3}",
+        },
+        {
+            "dir1": targets.directory,
+            "dir2": targets.subdirectory_1,
+            "dir3": targets.subdirectory_2,
+        },
+    ).ok()
+    res.env().contains_exactly([
+        ("foo", "{};{};{}".format(targets.directory[DirectoryInfo].path, targets.subdirectory_1[DirectoryInfo].path, targets.subdirectory_2[DirectoryInfo].path)),
+    ])
+    res.used_items().contains_exactly(["dir1", "dir2", "dir3"])
 
     _expect_that_formatted(
         env,
