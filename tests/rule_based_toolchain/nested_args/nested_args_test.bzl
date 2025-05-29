@@ -144,6 +144,48 @@ def _format_args_test(env, targets):
         {"bar": targets.foo, "foo": targets.foo},
     ).err().contains('"{foo} {bar}" contained multiple variables')
 
+    res = _expect_that_formatted(
+        env,
+        [
+            "-paths",
+            "{dir};{file}",
+        ],
+        {
+            "dir": targets.directory,
+            "file": targets.bin_wrapper,
+        },
+    ).ok()
+    res.args().contains_exactly([
+        "-paths",
+        "{};{}".format(
+            targets.directory[DirectoryInfo].path,
+            targets.bin_wrapper[DefaultInfo].files.to_list()[0].path,
+        ),
+    ]).in_order()
+    res.used_items().contains_exactly(["dir", "file"])
+
+    res = _expect_that_formatted(
+        env,
+        [
+            "-paths",
+            "{dir1};{dir2};{dir3}",
+        ],
+        {
+            "dir1": targets.directory,
+            "dir2": targets.subdirectory_1,
+            "dir3": targets.subdirectory_2,
+        },
+    ).ok()
+    res.args().contains_exactly([
+        "-paths",
+        "{};{};{}".format(
+            targets.directory[DirectoryInfo].path,
+            targets.subdirectory_1[DirectoryInfo].path,
+            targets.subdirectory_2[DirectoryInfo].path,
+        ),
+    ]).in_order()
+    res.used_items().contains_exactly(["dir1", "dir2", "dir3"])
+
 def _iterate_over_test(env, targets):
     inner = _expect_that_nested(
         env,
@@ -229,6 +271,8 @@ TARGETS = [
     ":foo",
     ":my_list",
     "//tests/rule_based_toolchain/testdata:directory",
+    "//tests/rule_based_toolchain/testdata:subdirectory_1",
+    "//tests/rule_based_toolchain/testdata:subdirectory_2",
     "//tests/rule_based_toolchain/testdata:bin_wrapper",
 ]
 

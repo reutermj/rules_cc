@@ -293,20 +293,20 @@ def _escape(s):
 
 def _format_target(target, fail = fail):
     if VariableInfo in target:
-        return "%%{%s}" % target[VariableInfo].name
+        return "%%{%s}" % target[VariableInfo].name, True
     elif DirectoryInfo in target:
-        return _escape(target[DirectoryInfo].path)
+        return _escape(target[DirectoryInfo].path), False
 
     files = target[DefaultInfo].files.to_list()
     if len(files) == 1:
-        return _escape(files[0].path)
+        return _escape(files[0].path), False
 
     fail("%s should be either a variable, a directory, or a single file." % target.label)
 
 def _format_string(arg, format, used_vars, fail = fail):
     upto = 0
     out = []
-    has_format = False
+    has_variable = False
 
     # This should be "while true".
     # This number is used because it's an upper bound of the number of iterations.
@@ -326,12 +326,16 @@ def _format_string(arg, format, used_vars, fail = fail):
 
             if variable not in format:
                 fail('Unknown variable %r in format string %r. Try using cc_args(..., format = {"//path/to:variable": %r})' % (variable, arg, variable))
-            elif has_format:
-                fail("The format string %r contained multiple variables, which is unsupported." % arg)
             else:
+                formatted, is_variable = _format_target(format[variable], fail = fail)
+                if has_variable and is_variable:
+                    # this is a limitation of bazel because the variables are handled by the java code.
+                    # we can replace multiple directories and files as they're handled in pure starlark.
+                    fail("The format string %r contained multiple variables, which is unsupported." % arg)
+
                 used_vars[variable] = None
-                has_format = True
-                out.append(_format_target(format[variable], fail = fail))
+                has_variable = has_variable or is_variable
+                out.append(formatted)
                 upto += len(variable) + 2
 
         elif arg[upto] == "}":
