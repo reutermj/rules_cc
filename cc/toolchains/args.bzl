@@ -14,7 +14,7 @@
 """All providers for rule-based bazel toolchain config."""
 
 load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo")
-load("//cc/toolchains/impl:args_utils.bzl", "validate_nested_args")
+load("//cc/toolchains/impl:args_utils.bzl", "validate_env_vars", "validate_nested_args")
 load(
     "//cc/toolchains/impl:collect.bzl",
     "collect_action_types",
@@ -46,6 +46,7 @@ def _cc_args_impl(ctx):
         must_use = [],  # checking for unused variables in done when formatting `args`.
         format = {k: v for v, k in ctx.attr.format.items()},
     )
+    validate_env_vars(formatted_env)
 
     nested = None
     if ctx.attr.args or ctx.attr.nested:
