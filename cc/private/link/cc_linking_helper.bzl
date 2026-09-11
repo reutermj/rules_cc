@@ -27,6 +27,7 @@ load(
 load("//cc/private:cc_internal.bzl", _cc_internal = "cc_internal")
 load("//cc/private/compile:cc_compilation_outputs.bzl", "EMPTY_COMPILATION_OUTPUTS")
 load("//cc/private/link:cpp_link_action.bzl", "link_action")
+load("//cc/private/link:cpp_runtimes.bzl", "links_cpp_runtimes_dynamically")
 load("//cc/private/link:create_library_to_link.bzl", "make_library_to_link")
 load(
     "//cc/private/link:dynamic_library_symlink.bzl",
@@ -303,7 +304,7 @@ def _create_dynamic_link_actions(
 
     mnemonic = "ObjcLink" if dynamic_link_type == LINK_TARGET_TYPE.OBJC_EXECUTABLE else None
 
-    if linking_mode == LINKING_MODE.DYNAMIC:
+    if links_cpp_runtimes_dynamically(feature_configuration, linking_mode):
         toolchain_libraries = [make_library_to_link(
             _library_identifier = lib.path,
             dynamic_library = lib,

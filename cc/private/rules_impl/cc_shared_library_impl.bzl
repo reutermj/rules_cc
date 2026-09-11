@@ -22,6 +22,8 @@ load("//cc/common:cc_info.bzl", "CcInfo")
 load("//cc/common:cc_shared_library_info.bzl", "CcSharedLibraryInfo")
 load("//cc/common:semantics.bzl", "semantics")
 load("//cc/private:graph_node_info.bzl", "GraphNodeInfo")
+load("//cc/private/link:cpp_runtimes.bzl", "links_cpp_runtimes_dynamically")
+load("//cc/private/link:target_types.bzl", "LINKING_MODE")
 load(":function_providing_rule.bzl", "wrap_starlark_function")
 
 # TODO(#5200): Add export_define to library_to_link and cc_library
@@ -729,6 +731,12 @@ def _cc_shared_library_impl(ctx):
     # for which it will use the symlink in the solib directory. If we don't add it, a dependent
     # linked against it would fail.
     runfiles_files.append(linking_outputs.library_to_link.dynamic_library)
+
+    # Carry the toolchain's dynamic runtime libraries the library was linked against, as cc_binary
+    # does, so that they are there at run time for dependents that link their own runtime
+    # libraries statically. cc_shared_library always links in static mode.
+    if links_cpp_runtimes_dynamically(feature_configuration, LINKING_MODE.STATIC):
+        runfiles_files.extend(cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration).to_list())
     runfiles = ctx.runfiles(
         files = runfiles_files,
     )

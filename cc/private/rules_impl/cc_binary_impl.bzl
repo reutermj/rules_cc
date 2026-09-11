@@ -23,6 +23,8 @@ load("//cc/common:cc_info.bzl", "CcInfo")
 load("//cc/common:debug_package_info.bzl", "DebugPackageInfo")
 load("//cc/common:semantics.bzl", "semantics")
 load("//cc/private:graph_node_info.bzl", "GraphNodeInfo")
+load("//cc/private/link:cpp_runtimes.bzl", "links_cpp_runtimes_dynamically")
+load("//cc/private/link:target_types.bzl", "LINKING_MODE")
 load(":cc_shared_library_impl.bzl", "add_unused_dynamic_deps", "build_exports_map_from_only_dynamic_deps", "build_link_once_static_libs_map", "merge_cc_shared_library_infos", "separate_static_and_dynamic_link_libraries", "sort_linker_inputs", "throw_linked_but_not_exported_errors")
 load(":function_providing_rule.bzl", "wrap_starlark_function")
 
@@ -160,7 +162,11 @@ def _collect_runfiles(ctx, feature_configuration, cc_toolchain, libraries, cc_li
         builder = builder.merge(dynamic_dep[DefaultInfo].default_runfiles)
 
     builder = builder.merge_all(runfiles_is_static + runfiles_is_not_static)
-    if linking_mode == linker_mode.LINKING_DYNAMIC:
+
+    # The dynamic runtime libraries are needed at run time whenever they were linked, not only
+    # in dynamic linking mode.
+    runtimes_linking_mode = LINKING_MODE.DYNAMIC if linking_mode == linker_mode.LINKING_DYNAMIC else LINKING_MODE.STATIC
+    if links_cpp_runtimes_dynamically(feature_configuration, runtimes_linking_mode):
         dynamic_runtime_lib = cc_toolchain.dynamic_runtime_lib(feature_configuration = feature_configuration)
         dynamic_runtime_lib_list = dynamic_runtime_lib.to_list()
         builder_transitive_artifacts.extend(dynamic_runtime_lib_list)

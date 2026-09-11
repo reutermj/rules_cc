@@ -857,6 +857,11 @@ _static_link_cpp_runtimes_feature = feature(
     enabled = True,
 )
 
+_dynamic_link_cpp_runtimes_feature = feature(
+    name = FEATURE_NAMES.dynamic_link_cpp_runtimes,
+    enabled = True,
+)
+
 _simple_compile_feature = feature(
     name = FEATURE_NAMES.simple_compile_feature,
     flag_sets = [
@@ -1803,6 +1808,7 @@ _feature_name_to_feature = {
     FEATURE_NAMES.module_maps: _module_maps_feature,
     FEATURE_NAMES.use_header_modules: _use_header_modules_feature,
     FEATURE_NAMES.static_link_cpp_runtimes: _static_link_cpp_runtimes_feature,
+    FEATURE_NAMES.dynamic_link_cpp_runtimes: _dynamic_link_cpp_runtimes_feature,
     FEATURE_NAMES.simple_compile_feature: _simple_compile_feature,
     FEATURE_NAMES.simple_link_feature: _simple_link_feature,
     FEATURE_NAMES.link_env: _link_env_feature,

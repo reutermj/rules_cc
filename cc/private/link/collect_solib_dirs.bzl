@@ -15,7 +15,8 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//cc/common:cc_helper_internal.bzl", "is_shared_library")
-load("//cc/private/link:target_types.bzl", "LINKING_MODE", "LINK_TARGET_TYPE", "is_dynamic_library")
+load("//cc/private/link:cpp_runtimes.bzl", "links_cpp_runtimes_dynamically")
+load("//cc/private/link:target_types.bzl", "LINK_TARGET_TYPE", "is_dynamic_library")
 
 # TODO(b/338618120): Refine the signature of collect_solib_dirs. Large objects are passed in
 # just to determine a single property, for example link_type and linking_mode are passed in, just to
@@ -76,7 +77,8 @@ def collect_solib_dirs(
     need_toolchain_libraries_rpath = (
         toolchain_libraries_solib_dir and
         (is_dynamic_library(link_type) or
-         (link_type == LINK_TARGET_TYPE.EXECUTABLE and linking_mode == LINKING_MODE.DYNAMIC))
+         (link_type == LINK_TARGET_TYPE.EXECUTABLE and
+          links_cpp_runtimes_dynamically(feature_configuration, linking_mode)))
     )
 
     # Collect LibrariesToLink

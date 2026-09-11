@@ -355,11 +355,13 @@ cc_toolchain(
     compiler_files = "compile-k8",
     coverage_files = "coverage-file",
     dwp_files = "dwp-k8",
+    dynamic_runtime_lib = ":dynamic_runtime_lib",
     licenses = ["unencumbered"],
     linker_files = "link-k8",
     module_map = "crosstool.cppmap",
     objcopy_files = "objcopy-k8",
     output_licenses = ["unencumbered"],
+    static_runtime_lib = ":static_runtime_lib",
     strip_files = ":every-file",
     supports_header_parsing = 1,
     toolchain_config = ":macos-compiler_config",
@@ -374,11 +376,13 @@ cc_toolchain(
     compiler_files = "compile-k8",
     coverage_files = "coverage-file",
     dwp_files = "dwp-k8",
+    dynamic_runtime_lib = ":dynamic_runtime_lib",
     licenses = ["unencumbered"],
     linker_files = "link-k8",
     module_map = "crosstool.cppmap",
     objcopy_files = "objcopy-k8",
     output_licenses = ["unencumbered"],
+    static_runtime_lib = ":static_runtime_lib",
     strip_files = ":every-file",
     supports_header_parsing = 1,
     toolchain_config = ":k8-compiler_config",
@@ -388,6 +392,17 @@ cc_toolchain(
 filegroup(
     name = "interface_library_builder",
     srcs = ["build_interface_so"],
+)
+
+# The C++ runtime libraries the mock toolchain supplies under static_link_cpp_runtimes.
+filegroup(
+    name = "static_runtime_lib",
+    srcs = ["libmock_runtime.a"],
+)
+
+filegroup(
+    name = "dynamic_runtime_lib",
+    srcs = ["libmock_runtime.so"],
 )
 
 cc_library(

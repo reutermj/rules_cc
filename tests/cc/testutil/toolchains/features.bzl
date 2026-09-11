@@ -60,6 +60,7 @@ FEATURE_NAMES = struct(
     targets_windows = "targets_windows",
     windows_export_all_symbols = "windows_export_all_symbols",
     static_link_cpp_runtimes = "static_link_cpp_runtimes",
+    dynamic_link_cpp_runtimes = "dynamic_link_cpp_runtimes",
     simple_compile_feature = "simple_compile_feature",
     simple_link_feature = "simple_link_feature",
     link_env = "link_env",
